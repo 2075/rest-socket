@@ -1,4 +1,6 @@
-rest-socket
+REST-socket
 ===========
 
-Binary REST socket library for NodeJS and HTML5
+Binary REST sockets for NodeJS and HTML5
+
+

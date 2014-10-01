@@ -1,0 +1,26 @@
+{
+  "name": "restsock",
+  "version": "0.0.1",
+  "homepage": "https://github.com/LazerUnicorns/restsock",
+  "authors": [
+    "LazerUnicorns Ltd."
+  ],
+  "description": "Binary REST sockets for HTML5 and NodeJS",
+  "main": "dist/restsock.js",
+  "moduleType": [
+    "node"
+  ],
+  "keywords": [
+    "rest",
+    "socket",
+    "binary"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
