@@ -6,16 +6,20 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON("package.json"),
 
-		concat: {
+		build: {
 			options: {
 				separator: ';'
 			},
-			dist: {
-				src:  [ "src/**/*.js" ],
-				dest: "dist/<%= pkg.name %>.js"
+			html: {
+				src:  [ "src/core.js", "src/Client.js", "src/Service.js" ],
+				dest: "build/html/<%= pkg.name %>.js"
+			},
+			node: {
+				src:  [ "src/core.js", "src/Remote.js", "src/Server.js", "src/Service.js" ],
+				dest: "build/node/<%= pkg.name %>.js"
 			}
 		},
-
+/*
 		jshint: {
 			all: {
 				src: [
@@ -26,22 +30,23 @@ module.exports = function(grunt) {
 				}
 			},
 			dist: {
-				src:     "dist/restsock.js",
+				src:     "dist/resocket.io.js",
 				options: _jshintrc_options
 			}
 		},
+*/
 
 		uglify: {
 			all: {
 				files: {
-					"dist/restsock.min.js": [ "dist/restsock.js" ],
+					"./build/html/resocket.io.min.js": [ "./build/html/resocket.io.js" ],
+					"./build/node/resocket.io.min.js": [ "./build/node/resocket.io.js" ]
 				},
 				options: {
 					preserveComments: false,
-					sourceMap:        true,
-					sourceMapName:    "dist/restsock.min.map",
+					sourceMap:        false,
 					report:           "min",
-					banner: "/*! RESTSock v<%= pkg.version %> | " +
+					banner: "/*! RESocket.IO v<%= pkg.version %> | " +
 							"(c) 2014 LazerUnicorns Ltd.      | ",
 					compress: {
 						hoist_funs: false,
@@ -59,7 +64,9 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks("grunt-contrib-concat");
 	grunt.loadNpmTasks("grunt-contrib-uglify");
 
-	grunt.registerTask("default", [ "jshint", "concat", "uglify" ]);
+// TODO: integrate jshint
+	grunt.registerTask("default", [ "build:html", "build:node" ]);
+	// grunt.registerTask("default", [ "build:html", "build:node", "uglify:html", "uglify:node" ]);
 
 };
 

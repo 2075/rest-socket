@@ -1,5 +1,5 @@
 
-(function(global, restsocket) {
+(function(global, resocket) {
 
 	/*
 	 * FEATURE DETECTION
@@ -266,7 +266,7 @@
 			}
 
 
-			if (restsocket.debug === true) {
+			if (resocket.debug === true) {
 				console.log('sorbet.api.Client: Listening on ' + this.host + ':' + this.port);
 			}
 
@@ -462,8 +462,8 @@
 	};
 
 
-	restsocket.event(Client.prototype);
-	restsocket.Client = Client;
+	resocket.event(Client.prototype);
+	resocket.Client = Client;
 
-})(global, restsocket);
+})(global, resocket);
 

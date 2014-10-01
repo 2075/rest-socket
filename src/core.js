@@ -200,7 +200,7 @@
 	 * IMPLEMENTATION
 	 */
 
-	var restsocket = {
+	var resocket = {
 
 		debug:   false,
 		event:   function(proto) {
@@ -212,6 +212,7 @@
 		},
 
 		Client:  null,
+		Remote:  null,
 		Server:  null,
 		Service: null
 
@@ -219,7 +220,9 @@
 
 
 	if (typeof module !== 'undefined') {
-		module.exports = restsocket;
+		module.exports  = resocket;
+	} else {
+		global.resocket = resocket;
 	}
 
 })(typeof global !== 'undefined' ? global : this);
