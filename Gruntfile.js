@@ -6,9 +6,9 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON("package.json"),
 
-		build: {
+		concat: {
 			options: {
-				separator: ';'
+				separator: ''
 			},
 			html: {
 				src:  [ "src/core.js", "src/Client.js", "src/Service.js" ],
@@ -65,7 +65,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks("grunt-contrib-uglify");
 
 // TODO: integrate jshint
-	grunt.registerTask("default", [ "build:html", "build:node" ]);
+	grunt.registerTask("default", [ "concat:html", "concat:node" ]);
 	// grunt.registerTask("default", [ "build:html", "build:node", "uglify:html", "uglify:node" ]);
 
 };
