@@ -332,7 +332,7 @@
 		settings = settings instanceof Object ? settings : {};
 
 
-		this.port        = 80;
+		this.port        = 8080;
 		this.host        = 'localhost';
 		this.reconnect   = 0;
 
