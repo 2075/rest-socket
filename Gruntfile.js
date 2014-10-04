@@ -11,11 +11,11 @@ module.exports = function(grunt) {
 				separator: ''
 			},
 			html: {
-				src:  [ "src/core.js", "src/Client.js", "src/Service.js" ],
+				src:  [ "src/core.js", "src/codec/BitON.js", "src/codec/JSON.js", "src/io/Client.js", "src/io/Service.js" ],
 				dest: "build/html/<%= pkg.name %>.js"
 			},
 			node: {
-				src:  [ "src/core.js", "src/Remote.js", "src/Server.js", "src/Service.js" ],
+				src:  [ "src/core.js", "src/codec/BitON.js", "src/codec/JSON.js", "src/io/Remote.js", "src/io/Server.js", "src/io/Service.js" ],
 				dest: "build/node/<%= pkg.name %>.js"
 			}
 		},
@@ -65,8 +65,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks("grunt-contrib-uglify");
 
 // TODO: integrate jshint
-	grunt.registerTask("default", [ "concat:html", "concat:node" ]);
-	// grunt.registerTask("default", [ "build:html", "build:node", "uglify:html", "uglify:node" ]);
+
+	grunt.registerTask("default", [ "concat:html", "concat:node", "uglify:html", "uglify:node" ]);
 
 };
 

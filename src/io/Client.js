@@ -61,7 +61,7 @@
 
 	};
 
-	var _socket_handler = function(url, method, target) {
+	var _socket_handler = function(url, method) {
 
 		var that = this;
 
@@ -79,6 +79,9 @@
 		this.__socket.setRequestHeader('Content-Type', 'application/json; charset=utf8');
 		this.__socket.withCredentials = true;
 
+
+		// TODO: Integrate HTTP status codes to simulate Client.STATUS behaviour and disconnect events
+
 		this.__socket.onload = function() {
 
 			var blob = null;
@@ -87,33 +90,63 @@
 				var bytes = new Uint8Array(this.response);
 				blob = String.fromCharCode.apply(null, bytes);
 
-				_receive_handler.call(that, blob, true, target);
+				_receive_handler.call(that, blob, true);
 
 			} else {
 
 				blob = this.response;
 
-				_receive_handler.call(that, blob, false, target);
+				_receive_handler.call(that, blob, false);
 
 			}
 
 		};
 
 		this.__socket.onerror = function() {
-			that.trigger('disconnect', [ 1002, '' ]);
+
+			that.__socket    = null;
+			that.__isRunning = false;
+			_cleanup_services.call(that);
+
+			that.trigger('disconnect', [ 1002, Client.STATUS[1002] || null ]);
+
+
+			if (that.reconnect > 0) {
+
+				setTimeout(function() {
+					that.listen(that.port, that.host);
+				}, that.reconnect);
+
+			}
+
 		};
 
 		this.__socket.ontimeout = function() {
-			that.trigger('disconnect', [ 1001, '' ]);
+
+			that.__socket    = null;
+			that.__isRunning = false;
+			_cleanup_services.call(that);
+
+			that.trigger('disconnect', [ 1001, Client.STATUS[1001] || null ]);
+
+
+			if (that.reconnect > 0) {
+
+				setTimeout(function() {
+					that.listen(that.port, that.host);
+				}, that.reconnect);
+
+			}
+
 		};
 
 	};
 
-	var _receive_handler = function(blob, isBinary, data) {
+	var _receive_handler = function(blob, isBinary) {
 
-		var payload = null;
+		var data = null;
 		try {
-			payload = this.__decoder(blob);
+			data = this.__decoder(blob);
 		} catch(e) {
 			// Unsupported data encoding
 			return false;
@@ -129,13 +162,21 @@
 
 			if (method !== null) {
 
-				if (service !== null && typeof service[method] === 'function') {
+				if (method.charAt(0) === '@') {
+
+					if (method === '@plug') {
+						_plug_service.call(this, data._serviceId, service);
+					} else if (method === '@unplug') {
+						_unplug_service.call(this, data._serviceId, service);
+					}
+
+				} else if (service !== null && typeof service[method] === 'function') {
 
 					// Remove data frame service header
 					delete data._serviceId;
 					delete data._serviceMethod;
 
-					service[method](payload);
+					service[method](data);
 
 				}
 
@@ -147,7 +188,7 @@
 					delete data._serviceId;
 					delete data._serviceEvent;
 
-					service.trigger(event, [ payload ]);
+					service.trigger(event, [ data ]);
 
 				}
 
@@ -155,7 +196,7 @@
 
 		} else {
 
-			this.trigger('receive', [ payload ]);
+			this.trigger('receive', [ data ]);
 
 		}
 
@@ -164,12 +205,15 @@
 
 	};
 
-	var _is_service = function(service) {
+	var _is_service_waiting = function(service) {
 
-		if (service instanceof Object && typeof service.trigger === 'function') {
-			return true;
+		for (var w = 0, wl = this.__services.waiting.length; w < wl; w++) {
+
+			if (this.__services.waiting[w] === service) {
+				return true;
+			}
+
 		}
-
 
 		return false;
 
@@ -177,14 +221,13 @@
 
 	var _is_service_active = function(service) {
 
-		for (var s = 0, sl = this.__services.length; s < sl; s++) {
+		for (var a = 0, al = this.__services.active.length; a < al; a++) {
 
-			if (this.__services[s] === service) {
+			if (this.__services.active[a] === service) {
 				return true;
 			}
 
 		}
-
 
 		return false;
 
@@ -192,31 +235,89 @@
 
 	var _plug_service = function(id, service) {
 
-		this.__services.push(service);
+		id = typeof id === 'string' ? id : null;
 
-		service.trigger('plug', []);
+		if (id === null || service === null) {
+			return;
+		}
 
-	};
-
-	var _unplug_service = function(id, service) {
 
 		var found = false;
 
-		for (var s = 0, sl = this.__services.length; s < sl; s++) {
+		for (var w = 0, wl = this.__services.waiting.length; w < wl; w++) {
 
-			if (this.__services[s] === service) {
-				this.__services.splice(s, 1);
+			if (this.__services.waiting[w] === service) {
+				this.__services.waiting.splice(w, 1);
 				found = true;
-				sl--;
-				s--;
+				wl--;
+				w--;
 			}
 
 		}
 
 
 		if (found === true) {
-			service.trigger('unplug', []);
+
+			this.__services.active.push(service);
+
+			service.trigger('plug', []);
+
+			if (RESTsocket.debug === true) {
+				console.log('RESTsocket.io.Client: Remote plugged Service (' + id + ')');
+			}
+
 		}
+
+	};
+
+	var _unplug_service = function(id, service) {
+
+		id = typeof id === 'string' ? id : null;
+
+		if (id === null || service === null) {
+			return;
+		}
+
+
+		var found = false;
+
+		for (var a = 0, al = this.__services.active.length; a < al; a++) {
+
+			if (this.__services.active[a] === service) {
+				this.__services.active.splice(a, 1);
+				found = true;
+				al--;
+				a--;
+			}
+
+		}
+
+
+		if (found === true) {
+
+			service.trigger('unplug', []);
+
+			if (RESTsocket.debug === true) {
+				console.log('RESTsocket.io.Client: Remote unplugged Service (' + id + ')');
+			}
+
+		}
+
+	};
+
+	var _cleanup_services = function() {
+
+		for (var a = 0, al = this.__services.active.length; a < al; a++) {
+			this.__services[a].trigger('unplug', []);
+		}
+
+		if (RESTsocket.debug === true) {
+			console.log('RESTsocket.io.Client: Remote disconnected');
+		}
+
+
+		this.__services.waiting = [];
+		this.__services.active  = [];
 
 	};
 
@@ -237,7 +338,11 @@
 
 		this.__encoder   = settings.codec instanceof Object ? settings.codec.encode : JSON.stringify;
 		this.__decoder   = settings.codec instanceof Object ? settings.codec.decode : JSON.parse;
-		this.__services  = [];
+		this.__socket    = null;
+		this.__services  = {
+			waiting: [],
+			active:  []
+		};
 
 		this.__isBinary  = false;
 		this.__isRunning = false;
@@ -249,7 +354,22 @@
 	};
 
 
-	Class.prototype = {
+	Client.STATUS = {
+		1000: 'Normal Closure',
+		1001: 'Going Away',
+		1002: 'Protocol Error',
+		1003: 'Unsupported Data',
+		1005: 'No Status Received',
+		1006: 'Abnormal Closure',
+		1008: 'Policy Violation',
+		1009: 'Message Too Big',
+		1011: 'Internal Error',
+		1012: 'Service Restart',
+		1013: 'Try Again Later'
+	};
+
+
+	Client.prototype = {
 
 		/*
 		 * CUSTOM API
@@ -294,35 +414,46 @@
 			}
 
 
+			var method = 'POST';
+
 			if (service !== null) {
 
-				if (typeof service.id     === 'string') data._serviceId      = service.id;
-				if (typeof service.event  === 'string') data._serviceEvent   = service.event;
-				if (typeof service.method === 'string') data._serviceMethod  = service.method;
+				if (typeof service.id     === 'string') data._serviceId    = service.id;
+				if (typeof service.event  === 'string') data._serviceEvent = service.event;
+
+				if (typeof service.method === 'string') {
+
+					if (service.method.toUpperCase().match(/GET|OPTIONS|POST|PUT/)) {
+						data._serviceMethod = service.method.toUpperCase();
+						method              = service.method.toUpperCase();
+					} else {
+						data._serviceMethod = null;
+						method              = 'POST';
+					}
+
+				}
 
 			}
 
 
-			data._serviceMethod = data._serviceMethod.toUpperCase().match(/GET|PUT|POST|OPTIONS/) ? data._serviceMethod.toLowerCase() : 'get';
 			data._serviceRandom = '' + Date.now() + ('' + Math.random()).substr(3);
 
 
-			// First, I want to rage about Microsoft. You did the shittiest job designing this API. Seriously, Thumbs Down!
-
 			var url = 'http://' + this.host + ':' + this.port + '/api/' + data._serviceId;
-			if (data._serviceMethod === 'get') {
+			if (method === 'GET') {
 				url += _GET_encoder(data);
 			}
 
 			var target = {
-				_serviceId:    data._serviceId,
-				_serviceEvent: data._serviceMethod
+				_serviceId:     data._serviceId,
+				_serviceEvent:  data._serviceEvent,
+				_serviceMethod: data._serviceMethod.toUpperCase().match(/GET|PUT|POST|OPTIONS/) ? null : data._serviceMethod
 			};
 
-			_socket_handler.call(this, url, data._serviceMethod.toUpperCase(), target);
+			_socket_handler.call(this, url, method, target);
 
 
-			if (data._serviceMethod === 'get') {
+			if (method === 'GET') {
 
 				this.__socket.send(null);
 
@@ -389,14 +520,20 @@
 
 		addService: function(service) {
 
-			service = _is_service(service) ? service : null;
+			service = service instanceof RESTsocket.io.Service ? service : null;
 
 
 			if (service !== null) {
 
-				if (_is_service_active.call(this, service) === false) {
+				if (_is_service_waiting.call(this, service) === false && _is_service_active.call(this, service) === false) {
 
-					_plug_service.call(this, service.id, service);
+					this.__services.waiting.push(service);
+
+					// Please, Remote, plug Service!
+					this.send({}, {
+						id:     service.id,
+						method: '@plug'
+					});
 
 					return true;
 
@@ -416,19 +553,23 @@
 
 			if (id !== null) {
 
-				var found = null;
+				for (var w = 0, wl = this.__services.waiting.length; w < wl; w++) {
 
-				for (var s = 0, sl = this.__services.length; s < sl; s++) {
-
-					var service = this.__services[s];
-					if (service.id === id) {
-						found = service;
-						break;
+					var wservice = this.__services.waiting[w];
+					if (wservice.id === id) {
+						return wservice;
 					}
 
 				}
 
-				return found;
+				for (var a = 0, al = this.__services.active.length; a < al; a++) {
+
+					var aservice = this.__services.active[a];
+					if (aservice.id === id) {
+						return aservice;
+					}
+
+				}
 
 			}
 
@@ -439,14 +580,18 @@
 
 		removeService: function(service) {
 
-			service = _is_service(service) ? service : null;
+			service = service instanceof RESTsocket.io.Service ? service : null;
 
 
 			if (service !== null) {
 
-				if (_is_service_active.call(this, service) === true) {
+				if (_is_service_waiting.call(this, service) === true || _is_service_active.call(this, service) === true) {
 
-					_unplug_service.call(this, service.id, service);
+					// Please, Remote, unplug Service!
+					this.send({}, {
+						id:     service.id,
+						method: '@unplug'
+					});
 
 					return true;
 
@@ -462,7 +607,7 @@
 	};
 
 
-	RESTsocket.event(Client.prototype);
+	RESTsocket.extend(Client.prototype);
 	RESTsocket.io.Client = Client;
 
 })(typeof global !== 'undefined' ? global : this, RESTsocket);

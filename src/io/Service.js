@@ -37,7 +37,7 @@
 	};
 
 
-	RESTsocket.event(Service.prototype);
+	RESTsocket.extend(Service.prototype);
 	RESTsocket.io.Service = Service;
 
 })(typeof global !== 'undefined' ? global : this, RESTsocket);

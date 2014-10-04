@@ -114,9 +114,9 @@ var service = new rs.io.Service({
 	credentials: true         // cookies allowed?
 });
 
-service.GET = function(parameters) {
+service.GET = function(data) {
 
-	console.log('PARAMETERS were', parameters);
+	console.log('GET() received data', data);
 
 
 	var tunnel = this.tunnel;
@@ -145,7 +145,7 @@ server.bind('connect', function(remote) {
 server.bind('disconnect', function(remote) {
 	console.log('Remote disconnected, removing service...');
 	remote.removeService(service);
-}, client);
+}, server);
 
 server.listen(1337, 'localhost');
 ```
@@ -154,18 +154,33 @@ server.listen(1337, 'localhost');
 
 ### How does it work?
 
-- The required minimum support is HTTP Keep-Alive.
-- If your Browser is awesome and allows binary encoding using Uint8 Arrays, it will use the binary compression.
+- The basic requirement for a connection is an HTTP Keep-Alive socket.
+- If your Browser is awesome, it will automatically send data as a binary buffer.
 - If your Browser is even more awesome and allows using Websockets, it will automatically upgrade your connection.
 
-### Will it work in old Internet Explorers or non-Websocket Browsers?
+### Does it work with shitty Internet Explorer or non-Websocket Browsers?
 
-Yes, it will. RESTsocketIO supports both HTTP Keep-Alive sockets **and**
-Websockets as a transport protocol.
+Yes. RESTsocketIO supports both HTTP Keep-Alive sockets **and**
+Websockets as the underlying transport protocol.
 
 ### Will it work with HTTPS?
 
 Yes, it will. You only have to offer the certificates if you don't
 have an TLS/SSL-enabling proxy in between (like nginx). Take a look
 at the [TLS example](./example/tls/).
+
+### How can it stay REST compliant with other backends?
+
+The example in this README file shows how to implement a service using
+GET, POST, PUT, DELETE as the equivalent HTTP methods.
+This is backwards-compatible to crappy REST backends.
+
+If you want to be more awesome than the rest, use custom method names.
+Those are using an HTTP bidirectional connection (also known as HTTP PUSH service).
+
+### I have issues with binary GET, what should I do?
+
+That's a shitty design in the HTTP GET RFC2616 specification that
+doesn't allow transmitting a body with GET requests. Just switch to
+POST, PUT, DELETE instead or use a custom method name.
 

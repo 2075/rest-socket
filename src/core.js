@@ -204,8 +204,8 @@ var RESTsocket;
 
 	var RS = {
 
-		debug:   false,
-		event:   function(proto) {
+		debug:  false,
+		extend: function(proto) {
 
 			for (var prop in _event_interface) {
 				proto[prop] = _event_interface[prop];
@@ -232,18 +232,13 @@ var RESTsocket;
 
 
 	if (typeof module !== 'undefined') {
-
-		module.exports = RS;
-
+		module.exports    = RS;
 	} else {
-
 		global.RESTsocket = RS;
-
 	}
 
 
 	RESTsocket = RS;
 
 })(typeof global !== 'undefined' ? global : this);
-
 
