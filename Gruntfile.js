@@ -30,7 +30,7 @@ module.exports = function(grunt) {
 				}
 			},
 			dist: {
-				src:     "dist/resocket.io.js",
+				src:     "dist/restsocket.io.js",
 				options: _jshintrc_options
 			}
 		},
@@ -39,14 +39,14 @@ module.exports = function(grunt) {
 		uglify: {
 			all: {
 				files: {
-					"./build/html/resocket.io.min.js": [ "./build/html/resocket.io.js" ],
-					"./build/node/resocket.io.min.js": [ "./build/node/resocket.io.js" ]
+					"./build/html/restsocket.io.min.js": [ "./build/html/restsocket.io.js" ],
+					"./build/node/restsocket.io.min.js": [ "./build/node/restsocket.io.js" ]
 				},
 				options: {
 					preserveComments: false,
 					sourceMap:        false,
 					report:           "min",
-					banner: "/*! RESocket.IO v<%= pkg.version %> | " +
+					banner: "/*! RESTsocket.IO v<%= pkg.version %> | " +
 							"(c) 2014 LazerUnicorns Ltd.      | ",
 					compress: {
 						hoist_funs: false,

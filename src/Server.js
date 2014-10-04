@@ -1,5 +1,5 @@
 
-(function(global, restsock) {
+(function(global, RESTsocket) {
 
 	var Server = function(settings) {
 
@@ -11,7 +11,10 @@
 	};
 
 
-	restsock.Server = Server;
+	RESTsocket.io.Server = Server;
 
-})(global, restsock);
+})(global, RESTsocket);
+
+
+console.log(RESTsocket);
 

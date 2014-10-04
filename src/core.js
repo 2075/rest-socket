@@ -1,4 +1,6 @@
 
+var RESTsocket;
+
 (function(global) {
 
 	/*
@@ -200,7 +202,7 @@
 	 * IMPLEMENTATION
 	 */
 
-	var resocket = {
+	var RS = {
 
 		debug:   false,
 		event:   function(proto) {
@@ -211,19 +213,38 @@
 
 		},
 
-		Client:  null,
-		Remote:  null,
-		Server:  null,
-		Service: null
+		io: {
+
+			Client:  null,
+			Server:  null,
+			Service: null
+
+		}
 
 	};
 
 
 	if (typeof module !== 'undefined') {
-		module.exports  = resocket;
+
+		module.exports = function(debug) {
+
+			if (debug === true) {
+				RS.debug = true;
+			}
+
+
+			return RS.io;
+
+		};
+
 	} else {
-		global.resocket = resocket;
+
+		global.RESTsocket = RS;
+
 	}
+
+
+	RESTsocket = RS;
 
 })(typeof global !== 'undefined' ? global : this);
 

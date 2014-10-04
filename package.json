@@ -1,15 +1,15 @@
 {
-  "name": "resocket.io",
+  "name": "RESTsocket.io",
   "version": "0.0.1",
   "description": "Binary REST sockets for HTML5 and NodeJS",
-  "main": "./build/nodejs/resocket.io.js",
+  "main": "./build/nodejs/RESTsocket.io.js",
   "scripts": {
     "build": "npm install && grunt",
     "test": "grunt"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/LazerUnicorns/resocket.io.git"
+    "url": "https://github.com/LazerUnicorns/RESTsocket.io.git"
   },
   "keywords": [
     "REST",
@@ -19,9 +19,9 @@
   "author": "LazerUnicorns Ltd.",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/LazerUnicorns/resocket.io.git/issues"
+    "url": "https://github.com/LazerUnicorns/RESTsocket.io.git/issues"
   },
-  "homepage": "https://github.com/LazerUnicorns/resocket.io",
+  "homepage": "https://github.com/LazerUnicorns/RESTsocket.io",
   "dependencies": {
     "grunt": "^0.4.5",
     "grunt-cli": "^0.1.13",

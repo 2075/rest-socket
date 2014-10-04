@@ -1,12 +1,12 @@
 {
-  "name": "resocket.io",
+  "name": "RESTsocket.io",
   "version": "0.0.1",
-  "homepage": "https://github.com/LazerUnicorns/resocket.io",
+  "homepage": "https://github.com/LazerUnicorns/RESTsocket.io",
   "authors": [
     "LazerUnicorns Ltd."
   ],
   "description": "Binary REST sockets for HTML5 and NodeJS",
-  "main": "./build/html5/resocket.io.js",
+  "main": "./build/html5/RESTsocket.io.js",
   "moduleType": [
     "node"
   ],
