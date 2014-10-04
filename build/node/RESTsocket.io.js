@@ -213,13 +213,6 @@ var RESTsocket;
 
 		},
 
-		codec: {
-
-			BitON: null,
-			JSON:  null
-
-		},
-
 		io: {
 
 			Client:  null,
@@ -233,7 +226,16 @@ var RESTsocket;
 
 	if (typeof module !== 'undefined') {
 
-		module.exports = RS;
+		module.exports = function(debug) {
+
+			if (debug === true) {
+				RS.debug = true;
+			}
+
+
+			return RS.io;
+
+		};
 
 	} else {
 
@@ -246,4 +248,24 @@ var RESTsocket;
 
 })(typeof global !== 'undefined' ? global : this);
 
+
+
+(function(global, RESTsocket) {
+
+	var Server = function(settings) {
+
+	};
+
+
+	Server.prototype = {
+
+	};
+
+
+	RESTsocket.io.Server = Server;
+
+})(global, RESTsocket);
+
+
+console.log(RESTsocket);
 

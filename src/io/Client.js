@@ -231,13 +231,13 @@
 		settings = settings instanceof Object ? settings : {};
 
 
-		this.port       = 80;
-		this.host       = 'localhost';
-		this.reconnect  = 0;
+		this.port        = 80;
+		this.host        = 'localhost';
+		this.reconnect   = 0;
 
-		this.__encoder  = settings.encoder instanceof Function ? settings.encoder : JSON.stringify;
-		this.__decoder  = settings.decoder instanceof Function ? settings.decoder : JSON.parse;
-		this.__services = [];
+		this.__encoder   = settings.codec instanceof Object ? settings.codec.encode : JSON.stringify;
+		this.__decoder   = settings.codec instanceof Object ? settings.codec.decode : JSON.parse;
+		this.__services  = [];
 
 		this.__isBinary  = false;
 		this.__isRunning = false;
@@ -465,5 +465,5 @@
 	RESTsocket.event(Client.prototype);
 	RESTsocket.io.Client = Client;
 
-})(global, RESTsocket);
+})(typeof global !== 'undefined' ? global : this, RESTsocket);
 

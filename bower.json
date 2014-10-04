@@ -6,7 +6,7 @@
     "LazerUnicorns Ltd."
   ],
   "description": "Binary REST sockets for HTML5 and NodeJS",
-  "main": "./build/html5/RESTsocket.io.js",
+  "main": "./build/html/RESTsocket.io.js",
   "moduleType": [
     "node"
   ],

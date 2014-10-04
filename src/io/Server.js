@@ -13,7 +13,7 @@
 
 	RESTsocket.io.Server = Server;
 
-})(global, RESTsocket);
+})(typeof global !== 'undefined' ? global : this, RESTsocket);
 
 
 console.log(RESTsocket);

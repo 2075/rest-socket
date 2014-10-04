@@ -11,38 +11,143 @@ cases, up to 200% speed of JSON.stringify and JSON.parse. String
 serialization is around 100x the speed of JSON.
 
 
-## Usage
+## Usage (client-side)
 
-```javascript
-// Include this script in your HTML first (yes, don't use a protocol):
-// <script src="//cdnjs.cloudflare.com/ajax/libs/RESTsocket.io/0.0.1/RESTsocket.io.min.js"></script>
+- Install RESTsocket.io via bower.
 
-var rsio   = RESTsocket.io;
-var client = new rsio.Client({
-	endpoint: '/api',
-	encoder:  rsio.BitON.encode,
-	decoder:  rsio.BitON.decode
-});
-
-client.listen(8080, 'localhost');
-
-
-var service = new rsio.Service({
-	id: 'myservice'
-});
+```bash
+bower install "restsocket.io"
 ```
 
-```javascript
-// Use npm install "restsocket.io" in your project
 
-var rsio   = require('restsocket.io')(true); // activate debugging
-var server = new rsio.Server({
+- After you've installed the library, you are ready to use it.
+
+```javascript
+// Two ways for inclusion
+
+// 1. CDNJS method (recommended):
+// <script src="//cdnjs.cloudflare.com/ajax/libs/RESTsocket.io/0.0.1/RESTsocket.io.min.js"></script>
+
+// 2. Local method:
+// <script src="./components/restsocket.io/build/html/RESTsocket.io.min.js"></script>
+
+
+var rs     = RESTsocket;
+var client = new rs.io.Client({
 	endpoint: '/api',
-	encoder:  rsio.BitON.encode,
-	decoder:  rsio.BitON.decode
+	codec:    rs.codec.BitON
 });
 
-server.listen(8080, 'localhost');
+
+// SERVICE API
+
+var service = new rs.io.Service({
+	id:          'myservice', // unique identifier
+	credentials: true         // cookies allowed?
+});
+
+service.sync = function() {
+
+	var tunnel = this.tunnel;
+	if (tunnel !== null) {
+
+		tunnel.send({
+			foo:    'bar'
+		}, {
+			id:     this.id, // 'myservice'
+			method: 'GET'    // get event
+		});
+
+	}
+
+};
+
+service.bind('plug', function() {
+	console.log('myservice plugged, synchronizing nao ...');
+	this.sync();
+}, service);
+
+service.bind('unplug', function() {
+	console.log('myservice unplugged!');
+}, this);
+
+
+// CLIENT API
+
+client.bind('connect', function() {
+	console.log('Client connected, adding service ...');
+	this.addService(service);
+}, client);
+
+client.bind('disconnect', function() {
+	console.log('Client disconnected, removing service...');
+	this.removeService(service);
+}, client);
+
+client.listen(1337, 'localhost');
+```
+
+
+## Usage (server-side)
+
+- Install RESTsocket.io via npm.
+
+```bash
+npm install "restsocket.io"
+```
+
+
+- After you've installed the library, you are ready to use it.
+
+```javascript
+var rs     = require('restsocket.io'); // activate debugging
+var server = new rs.io.Server({
+	endpoint: '/api',
+	codec:    rs.codec.BitON
+});
+
+
+// SERVICE API
+
+var service = new rs.io.Service({
+	id:          'myservice', // unique identifier
+	credentials: true         // cookies allowed?
+});
+
+service.GET = function(parameters) {
+
+	console.log('PARAMETERS were', parameters);
+
+
+	var tunnel = this.tunnel;
+	if (tunnel !== null) {
+
+		tunnel.send({
+			bar: 'qux'
+		}, {
+			id:     this.id,
+			event: 'reply'
+		});
+
+	}
+
+}, service);
+
+
+// SERVER API
+
+server.bind('connect', function(remote) {
+	console.log('Remote connected, adding service ...');
+	remote.addService(service);
+	remote.accept();
+}, server);
+
+server.bind('disconnect', function(remote) {
+	console.log('Remote disconnected, removing service...');
+	remote.removeService(service);
+}, client);
+
+server.listen(1337, 'localhost');
 ```
 
 ## Frequently Asked Questions
