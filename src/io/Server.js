@@ -1,6 +1,11 @@
 
 (function(global, RESTsocket) {
 
+	var http = require('http');
+	var zlib = require('zlib');
+
+
+
 	/*
 	 * HELPERS
 	 */
@@ -129,6 +134,7 @@
 							socket.removeAllListeners('timeout');
 
 
+
 /*
 							var remote = new _Remote(
 								socket,
@@ -153,13 +159,24 @@
 
 			this.__socket.on('request', function(request, socket) {
 
+console.log('NEW REQUEST');
+
 				var body = '';
 
 				request.on('data', function(chunk) {
+
+console.log('REQUEST DATA', chunk);
+
 					body += chunk;
 				});
 
 				request.on('end', function() {
+
+console.log('REQUEST END', body);
+
+socket.end();
+
+/*
 
 					var response = {
 						async:   false,
@@ -227,6 +244,8 @@
 					if (response.async === false) {
 						response.ready();
 					}
+
+*/
 
 				});
 

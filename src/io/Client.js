@@ -5,9 +5,99 @@
 	 * FEATURE DETECTION
 	 */
 
+	var _listen_handler = function() {};
+	var _send_handler   = function() {};
+
 	(function() {
 
-		if (typeof XMLHttpRequest === 'function') {
+		if (typeof WebSocket === 'function' && false) {
+
+			_listen_handler = function() {
+
+				var that = this;
+
+				var url = 'ws://' + this.host + ':' + this.port;
+
+				this.__socket = new WebSocket(url);
+
+
+				if (typeof ArrayBuffer !== 'undefined' && typeof this.__socket.binaryType !== 'undefined') {
+					this.__socket.binaryType = 'arraybuffer';
+					this.__isBinary = true;
+				}
+
+
+				this.__socket.onopen = function() {
+
+					that.__isRunning = true;
+					that.trigger('connect', []);
+
+				};
+
+				this.__socket.onmessage = function(event) {
+
+					var blob = null;
+					if (that.__isBinary === true && event.data instanceof ArrayBuffer) {
+
+						var bytes = new Uint8Array(event.data);
+						blob = String.fromCharCode.apply(null, bytes);
+
+						_receive_handler.call(that, blob, true);
+
+					} else {
+
+						blob = event.data;
+
+						_receive_handler.call(that, blob, false);
+
+					}
+
+				};
+
+				this.__socket.onclose = function(event) {
+
+					that.__socket    = null;
+					that.__isRunning = false;
+					_cleanup_services.call(that);
+
+					that.trigger('disconnect', [ event.code, Client.STATUS[event.code] || null ]);
+
+
+					if (that.reconnect > 0) {
+
+						setTimeout(function() {
+							that.listen(that.port, that.host);
+						}, that.reconnect);
+
+					}
+
+				};
+
+			};
+
+
+			_send_handler = function(data) {
+
+				var blob = this.__encoder(data);
+				if (this.__isBinary === true) {
+
+					var bl    = blob.length;
+					var bytes = new Uint8Array(bl);
+
+					for (var b = 0; b < bl; b++) {
+						bytes[b] = blob.charCodeAt(b);
+					}
+
+					blob = bytes.buffer;
+
+				}
+
+
+				this.__socket.send(blob);
+
+			};
+
+		} else if (typeof XMLHttpRequest === 'function') {
 
 			if (typeof XMLHttpRequest.prototype.sendAsBinary !== 'function') {
 
@@ -24,6 +114,160 @@
 
 			}
 
+
+			var _GET_encoder = function(data) {
+
+				var count = 0;
+				var str   = '';
+
+				for (var key in parameters) {
+
+					var value = parameters[key];
+					if (value instanceof Object) {
+						value = this.__encoder(parameters[key]);
+					}
+
+					if (count === 0) {
+						str += '?' + key + '=' + value;
+					} else {
+						str += '&' + key + '=' + value;
+					}
+
+					count++;
+
+				}
+
+
+				return str;
+
+			};
+
+
+			_listen_handler = function() {
+
+				var that = this;
+
+				setTimeout(function() {
+					that.trigger('connect', []);
+				}, 0);
+
+			};
+
+
+			_send_handler = function(data) {
+
+				var that = this;
+
+// TODO: This might be unnecessary if Keep-Alive works
+				data.__random = '' + Date.now() + ('' + Math.random()).substr(3);
+
+				var url    = 'http://' + this.host + ':' + this.port + '/api/' + data._serviceId;
+				var method = data._serviceMethod || 'POST';
+				if (method === 'GET') {
+					url += _GET_encoder(data);
+				}
+
+				this.__socket = new XMLHttpRequest();
+				this.__socket.open(method, url, true);
+
+
+				if (this.__socket.responseType && typeof this.__socket.sendAsBinary === 'function') {
+					this.__socket.responseType = 'arraybuffer';
+					this.__isBinary = true;
+				}
+
+
+				this.__socket.setRequestHeader('Content-Type', 'application/json; charset=utf8');
+				this.__socket.withCredentials = true;
+
+
+// TODO: Integrate HTTP status codes to simulate Client.STATUS behaviour and disconnect events
+
+				this.__socket.onload = function() {
+
+console.log('HTTP socket load event!', this.response);
+
+					var blob = null;
+					if (that.__isBinary === true) {
+
+						var bytes = new Uint8Array(this.response);
+						blob = String.fromCharCode.apply(null, bytes);
+
+						_receive_handler.call(that, blob, true);
+
+					} else {
+
+						blob = this.response;
+
+						_receive_handler.call(that, blob, false);
+
+					}
+
+				};
+
+				this.__socket.onerror = function() {
+
+					that.__socket    = null;
+					that.__isRunning = false;
+					_cleanup_services.call(that);
+
+					that.trigger('disconnect', [ 1002, Client.STATUS[1002] || null ]);
+
+
+					if (that.reconnect > 0) {
+
+						setTimeout(function() {
+							that.listen(that.port, that.host);
+						}, that.reconnect);
+
+					}
+
+				};
+
+				this.__socket.ontimeout = function() {
+
+					that.__socket    = null;
+					that.__isRunning = false;
+					_cleanup_services.call(that);
+
+					that.trigger('disconnect', [ 1001, Client.STATUS[1001] || null ]);
+
+
+					if (that.reconnect > 0) {
+
+						setTimeout(function() {
+							that.listen(that.port, that.host);
+						}, that.reconnect);
+
+					}
+
+				};
+
+
+// TODO: Fix this
+
+this.__socket.ontimeout = this.__socket.onerror = function(event) {
+	console.log('ARGHS TIMEOUT OR ERROR', event, this);
+};
+
+
+				if (method === 'GET') {
+
+					this.__socket.send(null);
+
+				} else {
+
+					var blob = this.__encoder(data);
+					if (this.__isBinary === true) {
+						this.__socket.sendAsBinary(blob);
+					} else {
+						this.__socket.send(blob);
+					}
+
+				}
+
+			}
+
 		}
 
 	})();
@@ -34,113 +278,6 @@
 	 * HELPERS
 	 */
 
-	var _GET_encoder = function(parameters) {
-
-		var count = 0;
-		var str   = '';
-
-		for (var key in parameters) {
-
-			var value = parameters[key];
-			if (value instanceof Object) {
-				value = JSON.stringify(parameters[key]);
-			}
-
-			if (count === 0) {
-				str += '?' + key + '=' + value;
-			} else {
-				str += '&' + key + '=' + value;
-			}
-
-			count++;
-
-		}
-
-
-		return str;
-
-	};
-
-	var _socket_handler = function(url, method) {
-
-		var that = this;
-
-
-		this.__socket = new XMLHttpRequest();
-		this.__socket.open(method, url, true);
-
-
-		if (this.__socket.responseType && typeof this.__socket.sendAsBinary === 'function') {
-			this.__socket.responseType = 'arraybuffer';
-			this.__isBinary = true;
-		}
-
-
-		this.__socket.setRequestHeader('Content-Type', 'application/json; charset=utf8');
-		this.__socket.withCredentials = true;
-
-
-		// TODO: Integrate HTTP status codes to simulate Client.STATUS behaviour and disconnect events
-
-		this.__socket.onload = function() {
-
-			var blob = null;
-			if (that.__isBinary === true) {
-
-				var bytes = new Uint8Array(this.response);
-				blob = String.fromCharCode.apply(null, bytes);
-
-				_receive_handler.call(that, blob, true);
-
-			} else {
-
-				blob = this.response;
-
-				_receive_handler.call(that, blob, false);
-
-			}
-
-		};
-
-		this.__socket.onerror = function() {
-
-			that.__socket    = null;
-			that.__isRunning = false;
-			_cleanup_services.call(that);
-
-			that.trigger('disconnect', [ 1002, Client.STATUS[1002] || null ]);
-
-
-			if (that.reconnect > 0) {
-
-				setTimeout(function() {
-					that.listen(that.port, that.host);
-				}, that.reconnect);
-
-			}
-
-		};
-
-		this.__socket.ontimeout = function() {
-
-			that.__socket    = null;
-			that.__isRunning = false;
-			_cleanup_services.call(that);
-
-			that.trigger('disconnect', [ 1001, Client.STATUS[1001] || null ]);
-
-
-			if (that.reconnect > 0) {
-
-				setTimeout(function() {
-					that.listen(that.port, that.host);
-				}, that.reconnect);
-
-			}
-
-		};
-
-	};
 
 	var _receive_handler = function(blob, isBinary) {
 
@@ -377,6 +514,9 @@
 
 		listen: function(port, host) {
 
+			if (this.__socket !== null) return false;
+
+
 			this.port = typeof port === 'number' ? port : this.port;
 			this.host = typeof host === 'string' ? host : this.host;
 
@@ -414,8 +554,6 @@
 			}
 
 
-			var method = 'POST';
-
 			if (service !== null) {
 
 				if (typeof service.id     === 'string') data._serviceId    = service.id;
@@ -425,10 +563,8 @@
 
 					if (service.method.toUpperCase().match(/GET|OPTIONS|POST|PUT/)) {
 						data._serviceMethod = service.method.toUpperCase();
-						method              = service.method.toUpperCase();
 					} else {
 						data._serviceMethod = null;
-						method              = 'POST';
 					}
 
 				}
@@ -436,37 +572,7 @@
 			}
 
 
-			data._serviceRandom = '' + Date.now() + ('' + Math.random()).substr(3);
-
-
-			var url = 'http://' + this.host + ':' + this.port + '/api/' + data._serviceId;
-			if (method === 'GET') {
-				url += _GET_encoder(data);
-			}
-
-			var target = {
-				_serviceId:     data._serviceId,
-				_serviceEvent:  data._serviceEvent,
-				_serviceMethod: data._serviceMethod.toUpperCase().match(/GET|PUT|POST|OPTIONS/) ? null : data._serviceMethod
-			};
-
-			_socket_handler.call(this, url, method, target);
-
-
-			if (method === 'GET') {
-
-				this.__socket.send(null);
-
-			} else {
-
-				var blob = this.__encoder(data);
-				if (this.__isBinary === true) {
-					this.__socket.sendAsBinary(blob);
-				} else {
-					this.__socket.send(blob);
-				}
-
-			}
+			_send_handler.call(this, data);
 
 
 			return true;

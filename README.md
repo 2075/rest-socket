@@ -131,7 +131,7 @@ service.GET = function(data) {
 
 	}
 
-}, service);
+};
 
 
 // SERVER API

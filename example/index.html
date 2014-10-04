@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<body>
+
+	<script src="../build/html/RESTsocket.io.js"></script>
+
+	<script>
+		var service = new RESTsocket.io.Service({
+			id:          'example',
+			credentials: true
+		});
+
+		service.sync = function() {
+
+			console.log('Synchronizing Service.');
+
+// TODO: send sync data package
+
+		};
+
+		service.bind('plug', function() {
+			console.log('Service plugged.');
+			this.sync();
+		}, service);
+
+		service.bind('unplug', function() {
+			console.log('Service unplugged.');
+		}, service);
+
+
+		var client = new RESTsocket.io.Client({
+			codec: RESTsocket.data.JSON
+		});
+
+		client.bind('connect', function() {
+			console.log('Client connected.');
+			this.addService(service);
+		}, client);
+
+		client.bind('disconnect', function() {
+			console.log('Client disconnected.');
+			this.removeService(service);
+		}, client);
+
+		client.listen(1337, 'localhost');
+	</script>
+
+</body>
+</html>
