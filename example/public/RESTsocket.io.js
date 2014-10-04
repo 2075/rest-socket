@@ -957,7 +957,7 @@ var RESTsocket;
 
 	(function() {
 
-		if (typeof WebSocket === 'function' && false) {
+		if (typeof WebSocket === 'function') {
 
 			_listen_handler = function() {
 
@@ -1093,6 +1093,9 @@ var RESTsocket;
 			_listen_handler = function() {
 
 				var that = this;
+
+
+				this.__isRunning = true;
 
 				setTimeout(function() {
 					that.trigger('connect', []);
@@ -1478,15 +1481,9 @@ this.__socket.ontimeout = this.__socket.onerror = function(event) {
 			}
 
 
-			// No Socket, so we are running constantly
-			this.__isRunning = true;
+			_listen_handler.call(this);
 
-
-			// Simulate Socket connection behaviour
-			var that = this;
-			setTimeout(function() {
-				that.trigger('connect', []);
-			}, 0);
+			return true;
 
 		},
 
@@ -1520,7 +1517,6 @@ this.__socket.ontimeout = this.__socket.onerror = function(event) {
 
 
 			_send_handler.call(this, data);
-
 
 			return true;
 

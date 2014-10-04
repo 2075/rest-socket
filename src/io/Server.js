@@ -1,8 +1,9 @@
 
 (function(global, RESTsocket) {
 
-	var http = require('http');
-	var zlib = require('zlib');
+	var crypto = require('crypto');
+	var http   = require('http');
+	var zlib   = require('zlib');
 
 
 
@@ -133,7 +134,9 @@
 							socket.setKeepAlive(true, 0);
 							socket.removeAllListeners('timeout');
 
+console.log('SPAWNING WEBSOCKET REMOTE NAO');
 
+// TODO: Spawn Remote in WebSocket Mode
 
 /*
 							var remote = new _Remote(
