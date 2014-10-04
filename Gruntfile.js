@@ -7,17 +7,21 @@ module.exports = function(grunt) {
 		pkg: grunt.file.readJSON("package.json"),
 
 		concat: {
+
 			options: {
 				separator: ''
 			},
+
 			html: {
 				src:  [ "src/core.js", "src/codec/BitON.js", "src/codec/JSON.js", "src/io/Client.js", "src/io/Service.js" ],
-				dest: "build/html/<%= pkg.name %>.js"
+				dest: "build/html/RESTsocket.io.js"
 			},
+
 			node: {
 				src:  [ "src/core.js", "src/codec/BitON.js", "src/codec/JSON.js", "src/io/Remote.js", "src/io/Server.js", "src/io/Service.js" ],
-				dest: "build/node/<%= pkg.name %>.js"
+				dest: "build/node/RESTsocket.io.js"
 			}
+
 		},
 /*
 		jshint: {
@@ -37,24 +41,30 @@ module.exports = function(grunt) {
 */
 
 		uglify: {
+
 			all: {
+
 				files: {
-					"./build/html/restsocket.io.min.js": [ "./build/html/restsocket.io.js" ],
-					"./build/node/restsocket.io.min.js": [ "./build/node/restsocket.io.js" ]
+					"./build/html/RESTsocket.io.min.js": [ "./build/html/RESTsocket.io.js" ],
+					"./build/node/RESTsocket.io.min.js": [ "./build/node/RESTsocket.io.js" ]
 				},
+
 				options: {
 					preserveComments: false,
 					sourceMap:        false,
 					report:           "min",
-					banner: "/*! RESTsocket.IO v<%= pkg.version %> | " +
-							"(c) 2014 LazerUnicorns Ltd.      | ",
+					banner: "/*! RESTsocket.IO v<%= pkg.version %>          *\n" +
+							" *  distributed under MIT License *\n" +
+							" *  (c) 2014 LazerUnicorns Ltd.   */\n\n",
 					compress: {
 						hoist_funs: false,
 						loops:      false,
 						unused:     true
 					}
 				}
+
 			}
+
 		}
 
 	});
@@ -66,7 +76,7 @@ module.exports = function(grunt) {
 
 // TODO: integrate jshint
 
-	grunt.registerTask("default", [ "concat:html", "concat:node", "uglify:html", "uglify:node" ]);
+	grunt.registerTask("default", [ "concat:html", "concat:node", "uglify" ]);
 
 };
 
