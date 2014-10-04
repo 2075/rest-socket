@@ -20,6 +20,11 @@ module.exports = function(grunt) {
 			node: {
 				src:  [ "src/core.js", "src/codec/BitON.js", "src/codec/JSON.js", "src/io/Remote.js", "src/io/Server.js", "src/io/Service.js" ],
 				dest: "build/node/RESTsocket.io.js"
+			},
+
+			example: {
+				src:  [ "build/html/RESTsocket.io.js" ],
+				dest: "example/public/RESTsocket.io.js"
 			}
 
 		},
@@ -76,7 +81,7 @@ module.exports = function(grunt) {
 
 // TODO: integrate jshint
 
-	grunt.registerTask("default", [ "concat:html", "concat:node", "uglify" ]);
+	grunt.registerTask("default", [ "concat:html", "concat:node", "concat:example", "uglify" ]);
 
 };
 

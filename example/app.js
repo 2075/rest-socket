@@ -39,7 +39,7 @@ service.refresh = function(data) {
  */
 
 var server = new RESTsocket.io.Server({
-	codec: RESTsocket.data.JSON
+	codec: RESTsocket.codec.JSON
 });
 
 server.bind('connect', function(remote) {
@@ -75,9 +75,9 @@ var fs   = require('fs');
 http.createServer(function(request, response) {
 
 	var uri      = url.parse(request.url).pathname;
-	var filename = path.join(process.cwd(), uri);
+	var filename = path.join(process.cwd() + '/public', uri);
 
-	path.exists(filename, function(exists) {
+	fs.exists(filename, function(exists) {
 
 		if (!exists) {
 
