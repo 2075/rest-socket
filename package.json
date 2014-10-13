@@ -19,7 +19,7 @@
   "author": "LazerUnicorns Ltd.",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/LazerUnicorns/RESTsocket.io.git/issues"
+    "url": "https://github.com/LazerUnicorns/RESTsocket.io/issues"
   },
   "homepage": "https://github.com/LazerUnicorns/RESTsocket.io",
   "dependencies": {

@@ -10,7 +10,7 @@
 
 	(function() {
 
-		if (typeof WebSocket === 'function') {
+		if (typeof WebSocket === 'function' && false) {
 
 			_listen_handler = function() {
 
@@ -181,7 +181,7 @@
 
 
 				this.__socket.setRequestHeader('Content-Type', 'application/json; charset=utf8');
-				this.__socket.withCredentials = true;
+				this.__socket.withCredentials = this.credentials === true;
 
 
 // TODO: Integrate HTTP status codes to simulate Client.STATUS behaviour and disconnect events
@@ -245,13 +245,6 @@ console.log('HTTP socket load event!', this.response);
 					}
 
 				};
-
-
-// TODO: Fix this
-
-this.__socket.ontimeout = this.__socket.onerror = function(event) {
-	console.log('ARGHS TIMEOUT OR ERROR', event, this);
-};
 
 
 				if (method === 'GET') {
@@ -474,6 +467,7 @@ this.__socket.ontimeout = this.__socket.onerror = function(event) {
 
 		this.port        = 8080;
 		this.host        = 'localhost';
+		this.credentials = settings.credentials === true;
 		this.reconnect   = 0;
 
 		this.__encoder   = settings.codec instanceof Object ? settings.codec.encode : JSON.stringify;
@@ -558,7 +552,7 @@ this.__socket.ontimeout = this.__socket.onerror = function(event) {
 
 				if (typeof service.method === 'string') {
 
-					if (service.method.toUpperCase().match(/GET|OPTIONS|POST|PUT/)) {
+					if (service.method.toUpperCase().match(/OPTIONS|GET|PUT|POST|DELETE/)) {
 						data._serviceMethod = service.method.toUpperCase();
 					} else {
 						data._serviceMethod = null;

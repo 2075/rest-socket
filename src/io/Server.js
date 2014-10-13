@@ -70,6 +70,62 @@
 
 	};
 
+	var _write_rest_response = function(socket, blob, gzipped) {
+
+		var status = 200;
+		if (blob === null) {
+			status = 500;
+			blob   = 'null';
+		}
+
+
+		if (gzipped === true) {
+
+			zlib.gzip(blob, function(err, buffer) {
+
+				if (err) {
+
+					socket.writeHead(status, {
+						'Content-Type':                'application/json',
+						'Content-Length':              blob.length,
+						'Access-Control-Allow-Origin': '*'
+					});
+
+					socket.write(blob);
+
+				} else {
+
+					socket.writeHead(status, {
+						'Content-Type':                'application/json',
+						'Content-Encoding':            'gzip',
+						'Content-Length':              buffer.length,
+						'Access-Control-Allow-Origin': '*'
+					});
+
+					socket.write(buffer);
+
+				}
+
+				socket.end();
+
+			});
+
+		} else {
+
+			socket.writeHead(status, {
+				'Content-Type':                'application/json',
+				'Content-Length':              blob.length,
+				'Access-Control-Allow-Origin': '*'
+			});
+
+			socket.write(blob);
+
+			socket.end();
+
+		}
+
+	};
+
 
 
 	/*
@@ -81,15 +137,17 @@
 		settings = settings instanceof Object ? settings : {};
 
 
-		this.port      = 8080;
-		this.host      = 'localhost';
+		this.port        = 8080;
+		this.host        = 'localhost';
+		this.credentials = settings.credentials === true;
 
-		this.__encoder = settings.codec instanceof Object ? settings.codec.encode : JSON.stringify;
-		this.__decoder = settings.codec instanceof Object ? settings.codec.decode : JSON.parse;
-		this.__socket  = null;
-		this.__remotes = [];
+		this.__encoder   = settings.codec instanceof Object ? settings.codec.encode : JSON.stringify;
+		this.__decoder   = settings.codec instanceof Object ? settings.codec.decode : JSON.parse;
+		this.__socket    = null;
+		this.__remotes   = [];
+		this.__services  = [];
 
-		this.___events = {};
+		this.___events   = {};
 
 		settings = null;
 
@@ -134,18 +192,31 @@
 							socket.setKeepAlive(true, 0);
 							socket.removeAllListeners('timeout');
 
+
+							socket.end();
+
+/*
+
+
+							var remote = new RESTsocket.io.Remote();
+
+							remote.bind('send', function(senddata) {
+
+								var sendblob = null;
+								try {
+									sendblob = JSON.stringify(senddata);
+								} catch(e) {
+								}
+
+								_write_websocket_response(socket, sendblob);
+
+							}, this);
+
 console.log('SPAWNING WEBSOCKET REMOTE NAO');
 
 // TODO: Spawn Remote in WebSocket Mode
 
-/*
-							var remote = new _Remote(
-								socket,
-								this.__encoder,
-								this.__decoder
-							);
 
-							this.connect(remote);
 */
 
 						}
@@ -157,100 +228,79 @@ console.log('SPAWNING WEBSOCKET REMOTE NAO');
 			});
 
 
-// TODO: Spawn temporary Remote_HTTP on each request
-// TODO: Evaluate if socket can be reused for further requests
-
 			this.__socket.on('request', function(request, socket) {
 
-console.log('NEW REQUEST');
+// TODO: Reuse socket for further requests
+// socket.setTimeout(0);
 
-				var body = '';
+				if (request.method === 'OPTIONS') {
 
-				request.on('data', function(chunk) {
+					var credentials = that.credentials ? 'true' : 'false';
+					var origin      = request.headers['origin'];
 
-console.log('REQUEST DATA', chunk);
 
-					body += chunk;
-				});
+					socket.writeHead(200, {
+						'Content-Type':                     'application/json',
+						'Vary':                             'Origin',
+						'Access-Control-Allow-Headers':     'Origin, Content-Type',
+						'Access-Control-Allow-Credentials': '' + credentials,
+						'Access-Control-Allow-Origin':      '*',
+						'Access-Control-Allow-Methods':     'GET,PUT,POST,DELETE',
+						'Access-Control-Max-Age':           60 * 60
+					});
 
-				request.on('end', function() {
+					socket.write('{}');
+					socket.end();
 
-console.log('REQUEST END', body);
+				} else {
 
-socket.end();
+					var gzipped     = !!((request.headers['accept-encoding'] || '').match(/\bgzip\b/));
+					var receiveblob = '';
 
-/*
+					request.on('data', function(chunk) {
+						receiveblob += chunk;
+					});
 
-					var response = {
-						async:   false,
-						status:  0,
-						header:  {},
-						content: '',
-						ready:   function() {
+					request.on('end', function() {
 
-							var data = this;
+						var remote = new RESTsocket.io.Remote();
 
-							if (data.status === 304) {
+						remote.bind('send', function(senddata) {
 
-								socket.writeHead(304);
-								socket.end();
-
-							} else {
-
-								var gzipped = !!((request.headers['accept-encoding'] || '').match(/\bgzip\b/));
-								if (gzipped === true) {
-
-									zlib.gzip(data.content, function(err, buffer) {
-
-										if (err) {
-
-											data.header['Content-Length'] = data.content.length;
-
-											socket.writeHead(data.status, data.header);
-											socket.write(data.content);
-
-										} else {
-
-											data.header['Content-Encoding'] = 'gzip';
-											data.header['Content-Length']   = buffer.length;
-
-											socket.writeHead(data.status, data.header);
-											socket.write(buffer);
-
-										}
-
-										socket.end();
-
-									});
-
-								} else {
-
-									data.header['Content-Length'] = data.content.length;
-
-									socket.writeHead(data.status, data.header);
-									socket.write(data.content);
-
-									socket.end();
-
-								}
-
+							var sendblob = null;
+							try {
+								sendblob = JSON.stringify(senddata);
+							} catch(e) {
 							}
+
+							_write_rest_response(socket, sendblob, gzipped);
+
+						});
+
+
+						that.trigger('connect', [ remote ]);
+
+
+						var receivedata = null;
+						try {
+							receivedata = JSON.parse(receiveblob);
+						} catch(e) {
+						}
+
+
+						if (receivedata !== null) {
+
+							remote.trigger('receive', [ receivedata ]);
+
+						} else {
+
+							_write_rest_response(socket, null, gzipped);
 
 						}
 
-					};
+					});
 
-
-// TODO: Process API Modules and services
-
-
-					if (response.async === false) {
-						response.ready();
-					}
-
-*/
-
-				});
+				}
 
 			});
 
