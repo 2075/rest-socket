@@ -141,8 +141,7 @@
 		this.host        = 'localhost';
 		this.credentials = settings.credentials === true;
 
-		this.__encoder   = settings.codec instanceof Object ? settings.codec.encode : JSON.stringify;
-		this.__decoder   = settings.codec instanceof Object ? settings.codec.decode : JSON.parse;
+		this.__codec     = settings.codec instanceof Object ? settings.codec : RESTsocket.codec.JSON;
 		this.__socket    = null;
 		this.__remotes   = [];
 		this.__services  = [];
@@ -263,7 +262,9 @@ console.log('SPAWNING WEBSOCKET REMOTE NAO');
 
 					request.on('end', function() {
 
-						var remote = new RESTsocket.io.Remote();
+						var remote = new RESTsocket.io.Remote({
+							codec: that.__codec
+						});
 
 						remote.bind('send', function(senddata) {
 
@@ -290,7 +291,7 @@ console.log('SPAWNING WEBSOCKET REMOTE NAO');
 
 						if (receivedata !== null) {
 
-							remote.trigger('receive', [ receivedata ]);
+							remote.receive(receivedata);
 
 						} else {
 
