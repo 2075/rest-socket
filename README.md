@@ -16,7 +16,7 @@ serialization is around 100x the speed of JSON.
 - Install RESTsocket.io via bower.
 
 ```bash
-bower install "restsocket.io"
+bower i https://github.com/LazerUnicorns/rest-socket/archive/master.tar.gz
 ```
 
 
