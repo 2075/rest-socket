@@ -93,7 +93,7 @@ client.listen(1337, 'localhost');
 - Install RESTsocket.io via npm.
 
 ```bash
-npm install "restsocket.io"
+npm i https://github.com/LazerUnicorns/rest-socket/archive/master.tar.gz -s
 ```
 
 
