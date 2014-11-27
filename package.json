@@ -4,6 +4,7 @@
   "description": "Binary REST sockets for HTML5 and NodeJS",
   "main": "./build/nodejs/RESTsocket.io.js",
   "scripts": {
+    "preinstall": "npm install && grunt",
     "build": "npm install && grunt",
     "test": "grunt"
   },
